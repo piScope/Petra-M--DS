@@ -3580,7 +3580,7 @@ SWIGINTERN PyObject *libmumps_solve_DMUMPS_get_real_rhs(libmumps_solve::DMUMPS *
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (int i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i];
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i];
     }
     return  pArray;
   }
@@ -3592,7 +3592,7 @@ SWIGINTERN PyObject *libmumps_solve_ZMUMPS_get_real_rhs(libmumps_solve::ZMUMPS *
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (int i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i].r;
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i].r;
     }
     return  pArray;
   }
@@ -3604,7 +3604,7 @@ SWIGINTERN PyObject *libmumps_solve_ZMUMPS_get_imag_rhs(libmumps_solve::ZMUMPS *
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (int i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i].i;
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i].i;
     }
     return  pArray;
   }
@@ -3616,7 +3616,7 @@ SWIGINTERN PyObject *libmumps_solve_SMUMPS_get_real_rhs(libmumps_solve::SMUMPS *
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (int i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i];
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i];
     }
     return  pArray;
   }
@@ -3628,7 +3628,7 @@ SWIGINTERN PyObject *libmumps_solve_CMUMPS_get_real_rhs(libmumps_solve::CMUMPS *
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (int i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i].r;
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i].r;
     }
     return  pArray;
   }
@@ -3640,7 +3640,7 @@ SWIGINTERN PyObject *libmumps_solve_CMUMPS_get_imag_rhs(libmumps_solve::CMUMPS *
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (int i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i].i;
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i].i;
     }
     return  pArray;
   }
@@ -9259,7 +9259,7 @@ SWIGINTERN PyObject *_wrap_i_array(PyObject *self, PyObject *args) {
       }
     }
     if (PyArray_Check(swig_obj[0])){
-      arg1 = (int *) PyArray_DATA(swig_obj[0]);
+      arg1 = (int *) PyArray_DATA((const PyArrayObject*)swig_obj[0]);
       //PyArray_CLEARFLAGS((PyArrayObject *)swig_obj[0], NPY_ARRAY_OWNDATA);        
       //for (MUMPS_INT i = 0; i < 100; i++) {    
       //   std::cout << std::to_string(arg1[i]) << "\n";
@@ -9302,7 +9302,7 @@ SWIGINTERN PyObject *_wrap_s_array(PyObject *self, PyObject *args) {
       }
     }
     if (PyArray_Check(swig_obj[0])){
-      arg1 = (float *) PyArray_DATA(swig_obj[0]);
+      arg1 = (float *) PyArray_DATA((const PyArrayObject*)swig_obj[0]);
     }
   }
   result = (float *)s_array(arg1);
@@ -9341,7 +9341,7 @@ SWIGINTERN PyObject *_wrap_d_array(PyObject *self, PyObject *args) {
       }
     }
     if (PyArray_Check(swig_obj[0])){
-      arg1 = (double *) PyArray_DATA(swig_obj[0]);
+      arg1 = (double *) PyArray_DATA((const PyArrayObject*)swig_obj[0]);
     }
   }
   result = (double *)d_array(arg1);
@@ -9383,7 +9383,7 @@ SWIGINTERN PyObject *_wrap_c_array(PyObject *self, PyObject *args) {
       
     } else {
       $2 = PyArray_Size(swig_obj[0]);
-      arg1 = (mumps_complex *) PyArray_DATA(swig_obj[0]);
+      arg1 = (mumps_complex *) PyArray_DATA((const PyArrayObject*)swig_obj[0]);
       //for (MUMPS_INT i = 0; i < 100; i++) {    
       //   std::cout << std::to_string(arg1[i].r) << ", "<< std::to_string(arg1[i].i) << "\n";
       //}
@@ -9429,7 +9429,7 @@ SWIGINTERN PyObject *_wrap_z_array(PyObject *self, PyObject *args) {
       
     } else {
       $2 = PyArray_Size(swig_obj[0]);
-      arg1 = (mumps_double_complex *) PyArray_DATA(swig_obj[0]);
+      arg1 = (mumps_double_complex *) PyArray_DATA((const PyArrayObject*)swig_obj[0]);
       //PyArray_CLEARFLAGS((PyArrayObject *)swig_obj[0], NPY_ARRAY_OWNDATA);    
       //PyObject_SetAttrString(self,"_ref_arr", swig_obj[0]); 
       //for (MUMPS_INT i = 0; i < 100; i++) {    
@@ -9474,7 +9474,7 @@ SWIGINTERN PyObject *_wrap_c_real_array(PyObject *self, PyObject *args) {
       }
     }
     if (PyArray_Check(swig_obj[0])){
-      arg1 = (float *) PyArray_DATA(swig_obj[0]);
+      arg1 = (float *) PyArray_DATA((const PyArrayObject*)swig_obj[0]);
     }
   }
   result = (float *)c_real_array(arg1);
@@ -9513,7 +9513,7 @@ SWIGINTERN PyObject *_wrap_z_real_array(PyObject *self, PyObject *args) {
       }
     }
     if (PyArray_Check(swig_obj[0])){
-      arg1 = (double *) PyArray_DATA(swig_obj[0]);
+      arg1 = (double *) PyArray_DATA((const PyArrayObject*)swig_obj[0]);
     }
   }
   result = (double *)z_real_array(arg1);
