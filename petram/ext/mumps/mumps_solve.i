@@ -68,7 +68,7 @@ sys.stderr.flush()
       }
   }
   if (PyArray_Check($input)){
-    $1 = (MUMPS_INT *) PyArray_DATA($input);
+    $1 = (MUMPS_INT *) PyArray_DATA((const PyArrayObject*)$input);
     //PyArray_CLEARFLAGS((PyArrayObject *)$input, NPY_ARRAY_OWNDATA);        
     //for (MUMPS_INT i = 0; i < 100; i++) {    
     //   std::cout << std::to_string($1[i]) << "\n";
@@ -95,7 +95,7 @@ sys.stderr.flush()
      }
   }
   if (PyArray_Check($input)){
-    $1 = (SMUMPS_REAL *) PyArray_DATA($input);
+    $1 = (SMUMPS_REAL *) PyArray_DATA((const PyArrayObject*)$input);
   }
 }
 
@@ -119,7 +119,7 @@ sys.stderr.flush()
      }
   }
   if (PyArray_Check($input)){
-    $1 = (DMUMPS_REAL *) PyArray_DATA($input);
+    $1 = (DMUMPS_REAL *) PyArray_DATA((const PyArrayObject*)$input);
   }
 }
 
@@ -143,7 +143,7 @@ sys.stderr.flush()
      }
   }
   if (PyArray_Check($input)){
-    $1 = (CMUMPS_REAL *) PyArray_DATA($input);
+    $1 = (CMUMPS_REAL *) PyArray_DATA((const PyArrayObject*)$input);
   }
 }
 
@@ -167,7 +167,7 @@ sys.stderr.flush()
      }
   }
   if (PyArray_Check($input)){
-    $1 = (ZMUMPS_REAL *) PyArray_DATA($input);
+    $1 = (ZMUMPS_REAL *) PyArray_DATA((const PyArrayObject*)$input);
   }
 }
 
@@ -194,7 +194,7 @@ sys.stderr.flush()
     
   } else {
     $2 = PyArray_Size($input);
-    $1 = (CMUMPS_COMPLEX *) PyArray_DATA($input);
+    $1 = (CMUMPS_COMPLEX *) PyArray_DATA((const PyArrayObject*)$input);
     //for (MUMPS_INT i = 0; i < 100; i++) {    
     //   std::cout << std::to_string($1[i].r) << ", "<< std::to_string($1[i].i) << "\n";
     //}
@@ -224,7 +224,7 @@ sys.stderr.flush()
     
   } else {
     $2 = PyArray_Size($input);
-    $1 = (ZMUMPS_COMPLEX *) PyArray_DATA($input);
+    $1 = (ZMUMPS_COMPLEX *) PyArray_DATA((const PyArrayObject*)$input);
     //PyArray_CLEARFLAGS((PyArrayObject *)$input, NPY_ARRAY_OWNDATA);    
     //PyObject_SetAttrString(self,"_ref_arr", $input); 
     //for (MUMPS_INT i = 0; i < 100; i++) {    
@@ -327,7 +327,7 @@ def z_to_list(A, l):
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (MUMPS_INT i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i].r;
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i].r;
     }
     return  pArray;
   }
@@ -339,7 +339,7 @@ def z_to_list(A, l):
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (MUMPS_INT i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i].i;
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i].i;
     }
     return  pArray;
   }
@@ -369,7 +369,7 @@ def z_to_list(A, l):
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (MUMPS_INT i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i];
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i];
     }
     return  pArray;
   }
@@ -397,7 +397,7 @@ def z_to_list(A, l):
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (MUMPS_INT i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i].r;
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i].r;
     }
     return  pArray;
   }
@@ -409,7 +409,7 @@ def z_to_list(A, l):
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (MUMPS_INT i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i].i;
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i].i;
     }
     return  pArray;
   }
@@ -438,7 +438,7 @@ def z_to_list(A, l):
     PyObject *pArray = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (!pArray){return NULL;}
     for (MUMPS_INT i=0; i< nrhs*lrhs; i++){
-      ((double *)PyArray_DATA(pArray))[i] = (double) rhs[i];
+      ((double *)PyArray_DATA((const PyArrayObject*)pArray))[i] = (double) rhs[i];
     }
     return  pArray;
   }
