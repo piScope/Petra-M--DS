@@ -48,10 +48,17 @@ cleancxx:
 	$(MAKE) -C petram/ext cleancxx
 so:
 	$(PYTHON) setup.py build
+
 install:
 	mkdir -p $(PREFIX)
 	for dir in $(PREFIX); do mkdir -p $(PREFIX)/$$dir; done
-	$(PYTHON) -m pip install ./ --prefix=$(PREFIX)
+	$(PYTHON) setup.py install --prefix=$(PREFIX)
+#
+#install:
+#	mkdir -p $(PREFIX)
+#	for dir in $(PREFIX); do mkdir -p $(PREFIX)/$$dir; done
+#       $(PYTHON) -m pip install ./ --prefix=$(PREFIX) --no-build-isolation
+#
 clean:
 	$(MAKE) -C petram/ext clean
 	rm -rf build/*
