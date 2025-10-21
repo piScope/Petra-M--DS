@@ -1,0 +1,3 @@
+include _build_system/*.py
+include mumps_solve/*
+include scripts/*

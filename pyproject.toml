@@ -1,0 +1,39 @@
+[project]
+name = "PetraM_MUMPS"
+license = "BSD-3-Clause"
+description = "Direct solver support module for PetraM"
+version = 1.2.0
+readme = "README.md"
+authors = [ { name = "S. Shiraiwa" } ]
+maintainers = [ { name = "S. Shiraiwa", email = "shiraiwa@princeton.edu" } ]
+keywords = ["scientific computing", "finite element method"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=2.3.0",
+]
+
+[project.optional-dependencies]
+MPI = ["mpi4py"]
+
+[project.urls]
+"Download" = "https://github.com/piScope/PetraM_MUMPS"
+
+[build-system]
+requires = [
+        "setuptools>=80.0.1",
+        "pip>=25.1.0", 
+	"numpy>=2.3.0",
+	"cmake>=4.0.0",
+	"swig>=4.3",
+]
+build-backend = "backend"
+backend-path = ["_build_system"]
+
