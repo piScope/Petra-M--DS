@@ -2,7 +2,7 @@
 name = "PetraM_MUMPS"
 license = "BSD-3-Clause"
 description = "Direct solver support module for PetraM"
-version = 1.2.0
+version = "1.2.0"
 readme = "README.md"
 authors = [ { name = "S. Shiraiwa" } ]
 maintainers = [ { name = "S. Shiraiwa", email = "shiraiwa@princeton.edu" } ]

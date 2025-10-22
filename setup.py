@@ -1,7 +1,15 @@
-from __future__ import print_function
 """
 setup.py file for SWIG example
 """
+from 
+from setuptools import setup, find_packages
+from setuptools.command.build_py import build_py as _build_py
+from setuptools.command.install import install as _install
+from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+from distutils.command.clean import clean as _clean
+
+from _build_system.build_global import *
+
 from setuptools import setup, find_packages
 
 # To use a consistent encoding
@@ -9,119 +17,47 @@ from codecs import open
 import sys
 import os
 
-here = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(here, 'README.md')) as f:
-    long_description = f.read()
+class Clean(_clean):
+    user_options = _clean.user_options + [
+        ('ext', None, 'clean exteranal dependencies)'),
+    ]
 
-print('building mumps solver interface')
+    def initialize_options(self):
+        _clean.initialize_options(self)
+        self.ext = False
+        self.swig= False
 
-## 
-setup_dir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-mumps_solve_incdir = os.path.join(setup_dir, "mumps_solve")
-mumps_solve_dir = ''
+    def run(self):
+        bglb.dry_run = self.dry_run
+        bglb.verbose = bool(self.verbose)
 
-from distutils.core import *
-from distutils      import sysconfig
-
-
-modules= ["mumps_solve", ]
-
-module_path="petram.ext.mumps."
-sdir = "petram/ext/mumps/"
-sources = {name: [sdir + name + "_wrap.cxx"] for name in modules}
-
-proxy_names = {name: '_'+name for name in modules}
-
-#mumps_link_args =  [libporda, mumpscommonliba, dmumpsliba, smumpsliba, cmumpsliba,
-#                    zmumpsliba]
+        os.chdir(bglb.extdir)
 
 
-#include_dirs = [mumps_solve_incdir, mpichincdir, numpyincdir,
-#                mpi4pyincdir, mumpsincdir, mumpssrcdir]
-import numpy
-numpyincdir = numpy.get_include()
+        if self.ext:
+            path = os.path.join(bglb.extdir, 'mumps')
+            if os.path.exists(path):
+                shutil.rmtree(path)
+                
+        if self.swig or self.all:
+            clean_wrapper()
 
-import mpi4py
-mpi4pyincdir = mpi4py.get_include()
+        clean_so(all=self.all)
 
-mumps_inc_dir = os.getenv("MUMPS_INC_DIR")
-mpi_inc_dir = os.getenv("MPI_INC_DIR")
-
-include_dirs = [mumps_solve_incdir, numpyincdir, mpi4pyincdir,
-                mumps_inc_dir, mpi_inc_dir]
-
-include_dirs = [x for x in include_dirs if x.strip() != '']
-
-#lib_list = ["pord", "parmetis", "metis5", "scalapack",  "blas"]
-lib_list = []
-library_dirs = [os.getenv("MUMPS_SOLVE_DIR")]
-#libraries = ["smumps", "dmumps", "cmumps", "zmumps", "mumps_common"]
-libraries = ["mumps_solve"]
-for lib in lib_list:
-    if eval(lib) != "":
-        print(lib, eval(lib))
-        library_dirs.append(eval(lib+ 'lnkdir'))
-        libraries.append(eval(lib+'lib'))
-        
-mkl = os.getenv("MKL")
-ompflag = os.getenv("OMPFLAG")
-
-print("ompflag", ompflag)
-ext_modules = []
-for kk, name in enumerate(modules):
-   extra_link_args = [ompflag]
-
-   '''
-   if kk == 0:
-       extra_link_args = mumps_link_args + [sdir + name+'.a']
-   else:
-       extra_link_args = [sdir + name+'.a']
-
-   if whole_archive != '':
-       extra_link_args = ['-Wl', whole_archive] +  extra_link_args + [no_whole_archive]
-       extra_link_args =  [x for x in extra_link_args if len(x) != 0]   
-       extra_link_args =  [','.join(extra_text)]
-   '''
-   if mkl != '':
-       extra_link_args =  ['-shared-intel', mkl] + extra_link_args
-   #if nocompactunwind != '':        
-   #    extra_link_args.extend([nocompactunwind])
-   #extra_link_args =  ['-fopenmp']+[x for x in extra_link_args if len(x) != 0]
-   #extra_link_args =  [x for x in extra_link_args if len(x) != 0]   
+        os.chdir(rootdir)
+        _clean.run(self)
 
 
-   ext_modules.append(Extension(module_path+proxy_names[name],
-                        sources=sources[name],
-                        extra_compile_args = ['-DSWIG_TYPE_TABLE=PyMFEM'],   
-                        extra_link_args = extra_link_args,
-                        include_dirs = include_dirs,
-                        library_dirs = library_dirs,
-                        libraries = libraries ))
+if __name__ == '__main__':
+    cmdclass = {'build_py': BuildPy,
+                'install': Install,
+                'install_lib': InstallLib,
+                'install_egg_info': InstallEggInfo,
+                'install_scripts': InstallScripts,
+                'clean': Clean,
+                'bdist_wheel': BdistWheel}
 
-setup (name = 'PetraM_MUMPS',
-       url='https://github.com/piScope/PetraM',       
-       version = '1.1.9',
-       description = 'PetraM MUMPS interface', 
-       long_description=long_description,       
-       author      = "S. Shiraiwa",
-       author_email='shiraiwa@psfc.mit.edu',
-       license='GNUv3',
-       
-       classifiers=[
-        #   3 - Alpha
-        #   4 - Beta
-        #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'Topic :: Scientific/Engineering :: Physics',
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
-        'Programming Language :: Python :: 2.7',
-       ],
-
-       keywords='MFEM physics',
-       packages=find_packages(),
-       ext_modules = ext_modules,
-       install_requires=['numpy >= 2.2', 'swig']
-#       py_modules = modules,
-)
+    setup(
+        cmdclass=cmdclass,
+    )

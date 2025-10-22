@@ -16,76 +16,20 @@ import tarfile
 from collections import namedtuple
 from shutil import which as find_command
 
-__all__ = ["read_mfem_tplflags", "abspath", "external_install_prefix",
-           "make_call", "chdir", "remove_files",
+__all__ = ("abspath", "make_call", "chdir", "remove_files",
            "make", "make_install", "download", "gitclone",
-           "record_mfem_sha", "cmake", 
-           "get_numpy_inc", "get_mpi4py_inc", "find_libpath_from_prefix",
-           "clean_so", ]
+           "cmake",)
 
 # ----------------------------------------------------------------------------------------
 #   global constant and variabls for build-process
 # ----------------------------------------------------------------------------------------
-from build_consts import *
-import build_globals as bglb
-
-# ----------------------------------------------------------------------------------------
-# Metadata
-# ----------------------------------------------------------------------------------------
-
-
-def read_mfem_tplflags(prefix):
-    filename = os.path.join(prefix, 'share', 'mfem', 'config.mk')
-    if not os.path.exists(filename):
-        print("NOTE: " + filename + " does not exist.")
-        print("returning empty string")
-        return ""
-
-    config = configparser.ConfigParser()
-    with open(filename) as fp:
-        config.read_file(itertools.chain(['[global]'], fp), source=filename)
-    flags = dict(config.items('global'))['mfem_tplflags']
-    return flags
+from build_globals import bglb,mumps_build_opts
 
 # ----------------------------------------------------------------------------------------
 # Utilities
 # ----------------------------------------------------------------------------------------
-
-
 def abspath(path):
     return os.path.abspath(os.path.expanduser(path))
-
-
-def external_install_prefix(prefix, verbose=True):
-
-    if hasattr(site, "getusersitepackages"):
-        usersite = site.getusersitepackages()
-    else:
-        usersite = site.USER_SITE
-
-    if verbose:
-        print("running external_install_prefix with the following parameters")
-        print("   sys.argv :", sys.argv)
-        print("   sys.prefix :", sys.prefix)
-        print("   usersite :", usersite)
-        print("   prefix :", prefix)
-
-    if '--user' in sys.argv:
-        path = usersite
-        if not os.path.exists(path):
-            os.makedirs(path)
-        path = os.path.join(path, 'mfem', 'external')
-        return path
-
-    else:
-        # when prefix is given...let's borrow pip._internal to find the location ;D
-        import pip._internal.locations
-        path = pip._internal.locations.get_scheme(
-            "mfem", prefix=prefix).platlib
-        if not os.path.exists(path):
-            os.makedirs(path)
-        path = os.path.join(path, 'mfem', 'external')
-        return path
 
 
 def make_call(command, target='', force_verbose=False, env=None):
@@ -160,7 +104,7 @@ def download(xxx):
     url is given by repos above
     '''
 
-    if os.path.exists(os.path.join(extdir, xxx)):
+    if os.path.exists(os.path.join(bglb.extdir, xxx)):
         print("Download " + xxx + " skipped. Use clean --all-exts if needed")
         return
     # Get the tarball for the latest release
@@ -174,9 +118,9 @@ def download(xxx):
 
     ftpstream = request.urlopen(url)
     targz = tarfile.open(fileobj=ftpstream, mode="r|gz")
-    targz.extractall(path=extdir)
-    os.rename(os.path.join(extdir, targz.getnames()[0].split('/')[0]),
-              os.path.join(extdir, xxx))
+    targz.extractall(path=bglb.extdir)
+    os.rename(os.path.join(bglb.extdir, targz.getnames()[0].split('/')[0]),
+              os.path.join(bglb.extdir, xxx))
 
 
 def gitclone(xxx, use_sha=False, branch='master'):
