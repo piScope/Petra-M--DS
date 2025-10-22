@@ -4,6 +4,8 @@
 
 import os
 from collections import namedtuple
+from shutil import which as find_command
+
 
 __all__ = ("bglb", "mumps_build_opts",)
 
@@ -22,6 +24,28 @@ class BuildGlobal():
             os.mkdir(os.path.join(rootdir, 'external'))
         self.rootdir = rootdir
         self.extdir = extdir
+
+        # compilers
+        
+        self.cc_command = 'cc' if os.getenv("CC") is None else os.getenv("CC")
+        self.cxx_command = 'c++' if os.getenv("CC") is None else os.getenv("CXX")
+        self.fc_command = 'c++' if os.getenv("FC") is None else os.getenv("FC")        
+        self.mpicc_command = 'mpicc' if os.getenv("MPICC") is None else os.getenv("MPICC")
+        self.mpicxx_command = 'mpic++' if os.getenv(
+             "MPICXX") is None else os.getenv("MPICXX")
+        self.mpifc_command = 'mpic++' if os.getenv(
+             "MPIFC") is None else os.getenv("MPIFC")
+        self.cxxstd_flag = '-std=c++17' if os.getenv(
+             "CXXSTDFLAG") is None else os.getenv("CXXSTDFLAG")
+        self.mpiinc = '' if os.getenv("MPIINC") is None else os.getenv("MPIINC")
+
+        self.swig_command = (find_command('swig') if os.getenv("SWIG") is None
+                     else os.getenv("SWIG"))
+        if swig_command is None:
+            assert False, "SWIG is not installed (hint: pip install swig)"
+
+    
+        self.build_mumps = True
 
 
 class MUMPSBuildOpts():
