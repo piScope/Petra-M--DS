@@ -7,7 +7,12 @@ from setuptools.command.install import install as _install
 from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
 from distutils.command.clean import clean as _clean
 
-from build_global import bglb
+# these lines are necesssary for python setup.py clean #
+import os, sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "_build_system"))
+
+from build_globals import bglb
+from build_config import *
 from build_mumps import *
 
 from setuptools import setup, find_packages
@@ -21,7 +26,7 @@ import shutil
 class BdistWheel(_bdist_wheel):
     def initialize_options(self):
         _bdist_wheel.initialize_options(self)
-        initialize_cmd_options(self)
+        initialize_cmd_opts(bglb)
 
     def finalize_options(self):
         def _has_ext_modules():
@@ -30,21 +35,22 @@ class BdistWheel(_bdist_wheel):
         _bdist_wheel.finalize_options(self)
 
     def run(self):
-        import build_globals as bglb
-
         if not bglb.is_configured:
             if bglb.verbose:
                 print('!!!!! Running config (bdist wheel)')
+
             bglb.prefix = abspath(self.bdist_dir)
-            bglb.ext_prefix = os.path.join(bglb.prefix, 'mfem', 'external')
             bglb.bdist_wheel_dir = abspath(self.bdist_dir)
             bglb.do_bdist_wheel = True
 
-            configure_build(self)
+            configure_build(bglb)
+
             clean_dist_info(bglb.prefix)
+
             if bglb.keep_temp:
                 self.keep_temp = True
-            print_config()
+
+        bglb.is_configured = True
 
         self.run_command("build")
 
@@ -63,15 +69,18 @@ class BuildPy(_build_py):
         _build_py.finalize_options(self)
 
     def run(self):
-        bglb.build_py_done = True
+
+        print_config(bglb)
 
         if bglb.build_mumps:
             clone_mumps()
-            cmake_mumps(opts)
+            cmake_mumps(bglb)
             build_mumps()
 
+        bglb.build_py_done = True
+
         _build_py.run(self)
-   
+
 class Clean(_clean):
     user_options = _clean.user_options + [
         ('ext', None, 'clean exteranal dependencies)'),
@@ -86,20 +95,15 @@ class Clean(_clean):
         bglb.dry_run = self.dry_run
         bglb.verbose = bool(self.verbose)
 
-        os.chdir(bglb.extdir)
 
-
-        if self.ext:
+        if self.ext or self.all:
             path = os.path.join(bglb.extdir, 'mumps')
             if os.path.exists(path):
                 shutil.rmtree(path)
-                
+
         if self.swig or self.all:
             clean_wrapper()
 
-        clean_so(all=self.all)
-
-        os.chdir(rootdir)
         _clean.run(self)
 
 

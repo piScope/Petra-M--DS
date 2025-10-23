@@ -1,41 +1,155 @@
 import sys
-import configparser
-from urllib import request
-import itertools
-import site
-import re
-import subprocess
-import multiprocessing
-import ssl
-import tarfile
+import os
 import shutil
 from collections import namedtuple
-from shutil import which as find_command
+
 
 __all__ = ["print_config",
-           "initialize_cmd_options",
-           "cmd_options",
-           "process_cmd_options",
+           "initialize_cmd_opts",
+           "process_cmd_opts",
+           "process_setup_opts",
            "configure_build",
            "clean_dist_info",
+           "clean_wrapper",
            ]
 
-def print_config():
+from shutil import which as find_command
+swig_command = find_command('swig')
+cc_command = find_command('cc')
+cxx_command = find_command('c++')
+fc_command = find_command('fc')
+mpicc_command = find_command('mpicc')
+mpicxx_command = find_command('mpic++')
+mpifort_command = find_command('mpifort')
+
+cmd_opts = [
+    ('MUMPS-PTSCOTCH=', 'YES', 'build mumps with PTScotch'),
+    ('MUMPS-SCOTCH=', 'YES', 'build mumps with Scotch'),
+    ('MUMPS-METIS=', 'YES', 'build mumps with METIS'),
+    ('MUMPS-ParMETIS=', 'YES', 'build mumps with ParMETIS'),
+    ('MUMPS-OpenMP=', 'YES', 'use OpenMP in MUMPS'),
+    ('SMUMPS=', 'YES', 'build mumps with ParMETIS'),
+    ('DMUMPS=', 'YES', 'build mumps with ParMETIS'),
+    ('CMUMPS=', 'YES', 'build mumps with ParMETIS'),
+    ('ZMUMPS=', 'YES', 'build mumps with ParMETIS'),
+    ('ext-only', False, 'Build external libaries (MUMPS etc) only'),
+    ('swig-only', False, 'Run swig wrapper only (ext-only is required before this option)'),
+    ('skip-ext', False, 'Skip building external libaries (MUMPS etc)'),
+    ('MPINC=', '', 'directory of mpi.h (typically mpi compiler wrapper will find it automatically)'),
+    ('CC=', cc_command, 'c compiler'),
+    ('CXX=', cxx_command, 'c++ compiler'),
+    ('FC=', fc_command, 'fortran compiler'),
+    ('MPICC=', mpicc_command, 'mpic compiler'),
+    ('MPICXX=', mpicxx_command, 'mpic++ compiler'),
+    ('MPIFORT=', mpifort_command, 'mpi fortran compiler'),
+    ('SWIG=', swig_command, 'swig wrapper generator'),
+    ('GIT-SSH', False, 'use ssh to clone repository'),
+]
+
+
+def print_config(bglb):
     print("----configuration----")
     print(" prefix", bglb.prefix)
     print(" build mumps : " + ("Yes" if bglb.build_mumps else "No"))
-    print(" c compiler : " + bglb.cc_command)
-    print(" c++ compiler : " + bglb.cxx_command)
-    print(" mpi-c compiler : " + bglb.mpicc_command)
-    print(" mpi-c++ compiler : " + bglb.mpicxx_command)
+    print(" c compiler : " + bglb.cc)
+    print(" c++ compiler : " + bglb.cxx)
+    print(" fc compiler : " + bglb.fc)
+    print(" mpi-c compiler : " + bglb.mpicc)
+    print(" mpi-c++ compiler : " + bglb.mpicxx)
+    print(" mpi-fort compiler : " + bglb.mpifort)
 
     print(" verbose : " + ("Yes" if bglb.verbose else "No"))
-    print(" SWIG : " + bglb.swig_command)
-
-    if bglb.blas_libraries != "":
-        print(" BLAS libraries : " + bglb.blas_libraries)
-    if bglb.lapack_libraries != "":
-        print(" Lapack libraries : " + bglb.lapack_libraries)
+    print(" SWIG : " + bglb.swig)
 
     print("")
 
+
+def clean_dist_info(wheeldir):
+    if not os.path.isdir(wheeldir):
+        return
+    for x in os.listdir(wheeldir):
+        if x.endswith(".dist-info"):
+            fname = os.path.join(wheeldir, x)
+            print("!!! removing existing ", fname)
+            shutil.rmtree(fname)
+
+
+def clean_wrapper():
+    print("!!!!!!!!! not implemented  !!!!!!!!!!!!!!!!!!! (clean wrapper)")
+    pass
+
+
+def initialize_cmd_opts(bglb):
+
+    for param, value, _help in cmd_opts:
+        if param.endswith('='):
+            param = param[:-1]
+
+        attr = '_'.join(param.split('-'))
+        value = value if os.getenv(attr) is None else os.getenv(attr)
+
+        setattr(bglb, attr.lower(), value)
+
+
+def process_cmd_opts(bglb, cfs):
+    '''
+    called when install workflow is used
+    '''
+    for param, _none, hit in cmd_opts:
+        attr = ("_".join(param.split("-"))).lower()
+
+        if param.endswith("="):
+            param = param[:-1]
+            attr = attr[:-1]
+            value = cfs.pop(param, "")
+            if value != "":
+                if not hasattr(bglb, attr):
+                    assert False, str(bglb) + " does not have " + attr
+                setattr(bglb, attr, value)
+        else:
+            value = cfs.pop(param, "No")
+            if not hasattr(bglb, attr):
+                assert False, str(bglb) + " does not have " + attr
+
+            if value.upper() in ("YES", "TRUE", "1"):
+                setattr(bglb, attr, True)
+            else:
+                setattr(bglb, attr, False)
+
+
+def process_setup_opts(bglb, args):
+    for item in args:
+        if item.startswith('--'):
+            item = item[2:]
+        if item.startswith('-'):
+            item = item[1:]
+
+        if len(item.split('=')) == 2:
+            param = item.split('=')[0]
+            value = item.split('=')[1]
+        else:
+            param = item.strip()
+            value = True
+        attr = "_".join(param.split("-"))
+
+        setattr(bglb, attr, value)
+
+
+def configure_build(bglb):
+    '''
+    called when install workflow is used
+
+    '''
+    if sys.argv[0] == 'setup.py' and sys.argv[1] == 'install':
+        process_setup_opts(bglb, sys.argv[2:])
+    else:
+        if bglb.verbose:
+            print("!!!!!!!!  command-line input (pip): ", bglb.cfs)
+        process_cmd_opts(bglb, bglb.cfs)
+
+    if bglb.ext_only:
+        bglb.keep_temp = True
+    if bglb.swig_only:
+        bglb.keep_temp = True
+    if bglb.skip_ext:
+        bglb.keep_temp = True

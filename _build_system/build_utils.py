@@ -20,14 +20,13 @@ __all__ = ("abspath", "make_call", "chdir", "remove_files",
            "make", "make_install", "download", "gitclone",
            "cmake",)
 
-# ----------------------------------------------------------------------------------------
-#   global constant and variabls for build-process
-# ----------------------------------------------------------------------------------------
-from build_global import bglb, mumps_build_opts
+from build_globals import bglb, REPOS
 
 # ----------------------------------------------------------------------------------------
 # Utilities
 # ----------------------------------------------------------------------------------------
+
+
 def abspath(path):
     return os.path.abspath(os.path.expanduser(path))
 
@@ -125,19 +124,23 @@ def download(xxx):
 
 def gitclone(xxx, use_sha=False, branch='master'):
     cwd = os.getcwd()
-    repo_xxx = os.path.join(extdir, xxx)
+    repo_xxx = os.path.join(bglb.extdir, xxx)
+
     if os.path.exists(repo_xxx):
         os.chdir(repo_xxx)
+
+        if branch == 'master':
+            branch = REPOS[xxx]["defbranch"]
         command = ['git', 'checkout', branch]
         make_call(command)
         command = ['git', 'pull']
         make_call(command)
     else:
         repo = REPOS[xxx]["url"]
-        if bglb.git_sshclone:
+        if bglb.git_ssh:
             repo = repo.replace("https://github.com/", "git@github.com:")
 
-        os.chdir(extdir)
+        os.chdir(bglb.extdir)
         command = ['git', 'clone', repo, xxx]
         make_call(command)
 
@@ -150,19 +153,21 @@ def gitclone(xxx, use_sha=False, branch='master'):
             sha = REPOS[xxx]["releases"][-1].hash
             command = ['git', 'checkout',  sha]
         else:
+            if branch == 'master':
+                branch = REPOS[xxx]["defbranch"]
             command = ['git', 'checkout', branch]
         make_call(command)
     os.chdir(cwd)
 
-def cmake(path, **kwargs):
+
+def cmake(*args, **kwargs):
     '''
     run cmake. must be called in the target directory
     '''
-    command = ['cmake', path]
+    command = ['cmake'] + list(args)
     for key, value in kwargs.items():
         command.append('-' + key + '=' + value)
 
     if bglb.osx_sysroot != '':
         command.append('-DCMAKE_OSX_SYSROOT=' + osx_sysroot)
     make_call(command)
-    
