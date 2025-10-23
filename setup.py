@@ -1,14 +1,14 @@
 """
 setup.py file for SWIG example
 """
-from 
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py as _build_py
 from setuptools.command.install import install as _install
 from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
 from distutils.command.clean import clean as _clean
 
-from _build_system.build_global import bglb
+from build_global import bglb
+from build_mumps import *
 
 from setuptools import setup, find_packages
 
@@ -16,9 +16,10 @@ from setuptools import setup, find_packages
 from codecs import open
 import sys
 import os
+import shutil
 
 class BdistWheel(_bdist_wheel):
-     def initialize_options(self):
+    def initialize_options(self):
         _bdist_wheel.initialize_options(self)
         initialize_cmd_options(self)
 
@@ -64,25 +65,10 @@ class BuildPy(_build_py):
     def run(self):
         bglb.build_py_done = True
 
-            if bglb.build_mumps:
-                mfem_downloaded = True
-                build_mumps(serial=True)
-
-            if bglb.build_mfemp:
-                if not mfem_downloaded:
-                    gitclone('mfem', use_sha=True) if bglb.mfem_branch is None else gitclone(
-                        'mfem', branch=bglb.mfem_branch)
-                cmake_make_mfem(serial=False)
-
-        if bglb.clean_swig:
-            clean_wrapper()
-        if bglb.run_swig:
-            generate_wrapper(bglb.run_swig_parallel)
-
-        if bglb.build_serial:
-            make_mfem_wrapper(serial=True)
-        if bglb.build_parallel:
-            make_mfem_wrapper(serial=False)
+        if bglb.build_mumps:
+            clone_mumps()
+            cmake_mumps(opts)
+            build_mumps()
 
         _build_py.run(self)
    

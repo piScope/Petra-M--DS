@@ -23,7 +23,7 @@ __all__ = ("abspath", "make_call", "chdir", "remove_files",
 # ----------------------------------------------------------------------------------------
 #   global constant and variabls for build-process
 # ----------------------------------------------------------------------------------------
-from build_globals import bglb,mumps_build_opts
+from build_global import bglb, mumps_build_opts
 
 # ----------------------------------------------------------------------------------------
 # Utilities
@@ -153,3 +153,16 @@ def gitclone(xxx, use_sha=False, branch='master'):
             command = ['git', 'checkout', branch]
         make_call(command)
     os.chdir(cwd)
+
+def cmake(path, **kwargs):
+    '''
+    run cmake. must be called in the target directory
+    '''
+    command = ['cmake', path]
+    for key, value in kwargs.items():
+        command.append('-' + key + '=' + value)
+
+    if bglb.osx_sysroot != '':
+        command.append('-DCMAKE_OSX_SYSROOT=' + osx_sysroot)
+    make_call(command)
+    

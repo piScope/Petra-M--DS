@@ -26,6 +26,9 @@ MPI = ["mpi4py"]
 [project.urls]
 "Download" = "https://github.com/piScope/PetraM_MUMPS"
 
+[tool.setuptools]
+packages = ["python.petram"]
+
 [build-system]
 requires = [
         "setuptools>=80.0.1",
