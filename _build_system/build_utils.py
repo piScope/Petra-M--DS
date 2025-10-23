@@ -128,9 +128,8 @@ def gitclone(xxx, use_sha=False, branch='master'):
 
     if os.path.exists(repo_xxx):
         os.chdir(repo_xxx)
-
         if branch == 'master':
-            branch = REPOS[xxx]["defbranch"]
+            branch = REPOS[xxx]["releases"][-1].defbranch
         command = ['git', 'checkout', branch]
         make_call(command)
         command = ['git', 'pull']
@@ -154,7 +153,7 @@ def gitclone(xxx, use_sha=False, branch='master'):
             command = ['git', 'checkout',  sha]
         else:
             if branch == 'master':
-                branch = REPOS[xxx]["defbranch"]
+                branch = REPOS[xxx]["releases"][-1].defbranch
             command = ['git', 'checkout', branch]
         make_call(command)
     os.chdir(cwd)

@@ -42,7 +42,7 @@ def cmake_mumps(bglb):
         if bglb.zmumps:
             cmake_opts['DBUILD_COMPELX16'] = 'Yes'
 
-        if bglb.int64:
+        if bglb.mumps_int64:
             cmake_opts['DMUMPS_intsize64'] = 'Yes'
         if bglb.mumps_openmp:
             cmake_opts['DMUMPS_openmp'] = 'Yes'
@@ -58,5 +58,13 @@ def cmake_mumps(bglb):
     chdir(root)
 
 
-def build_mumps():
-    pass
+def build_mumps(bglb):
+    #
+    #  will call cmake --build cmbuild
+    #
+    path = os.path.join(bglb.extdir, 'mumps')
+    root = chdir(path)
+    
+    cmake('--build', 'cmbuild')
+
+    chdir(root)

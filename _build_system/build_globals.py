@@ -20,7 +20,7 @@ class BuildGlobal():
         # flag to monitor build steps
 
         self.dry_run = False
-        self.verbose = False
+        self.verbose = True
         self.keep_temp = False
         self.is_configured = False
         self.build_py_done = False

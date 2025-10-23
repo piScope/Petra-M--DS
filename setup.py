@@ -45,7 +45,10 @@ class BdistWheel(_bdist_wheel):
 
             configure_build(bglb)
 
+
             clean_dist_info(bglb.prefix)
+
+            self.verbose = bglb.verbose
 
             if bglb.keep_temp:
                 self.keep_temp = True
@@ -75,7 +78,7 @@ class BuildPy(_build_py):
         if bglb.build_mumps:
             clone_mumps()
             cmake_mumps(bglb)
-            build_mumps()
+            build_mumps(bglb)
 
         bglb.build_py_done = True
 
