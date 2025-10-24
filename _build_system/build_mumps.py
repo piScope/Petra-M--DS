@@ -65,6 +65,8 @@ def build_mumps(bglb):
     path = os.path.join(bglb.extdir, 'mumps')
     root = chdir(path)
     
-    cmake('--build', 'cmbuild')
+    success, stdout, stderr = cmake('--build', 'cmbuild')
 
+    if not success:
+        assert False, stderr
     chdir(root)

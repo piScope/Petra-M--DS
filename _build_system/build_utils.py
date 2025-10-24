@@ -48,15 +48,25 @@ def make_call(command, target='', force_verbose=False, env=None):
     if not myverbose:
         kwargs['stdout'] = subprocess.DEVNULL
         kwargs['stderr'] = subprocess.DEVNULL
+    else:
+        kwargs['capture_output'] = True
 
-    p = subprocess.Popen(command, **kwargs)
-    p.communicate()
-    if p.returncode != 0:
+    try:
+        p = subprocess.run(command, **kwargs)
+
+    except subprocess.CalledProcessErro:
         if target == '':
             target = " ".join(command)
         print("Failed when calling command: " + target)
-        raise subprocess.CalledProcessError(p.returncode,
-                                            " ".join(command))
+        print("Subprocess stdout:", p.stdout.strip())
+        print("Subprocess stderr:", p.stderr.strip())
+
+        return False, p.stdout.strip(), p.stdout.strip()
+
+    if myverbose:
+        print(p.stdout.strip())
+
+    return True, '', ''
 
 
 def chdir(path):
@@ -169,4 +179,6 @@ def cmake(*args, **kwargs):
 
     if bglb.osx_sysroot != '':
         command.append('-DCMAKE_OSX_SYSROOT=' + osx_sysroot)
-    make_call(command)
+
+    flag, stdout, stdrrr = make_call(command)
+    return flag, stdout, stdrrr
