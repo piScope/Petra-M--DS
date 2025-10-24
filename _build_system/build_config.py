@@ -17,7 +17,7 @@ from shutil import which as find_command
 swig_command = find_command('swig')
 cc_command = find_command('cc')
 cxx_command = find_command('c++')
-fc_command = find_command('fc')
+fc_command = find_command('gfortran')
 mpicc_command = find_command('mpicc')
 mpicxx_command = find_command('mpic++')
 mpifort_command = find_command('mpifort')
@@ -42,7 +42,7 @@ cmd_opts = [
     ('FC=', fc_command, 'fortran compiler'),
     ('MPICC=', mpicc_command, 'mpic compiler'),
     ('MPICXX=', mpicxx_command, 'mpic++ compiler'),
-    ('MPIFORT=', mpifort_command, 'mpi fortran compiler'),
+    ('MPIFC=', mpifort_command, 'mpi fortran compiler'),
     ('SWIG=', swig_command, 'swig wrapper generator'),
     ('GIT-SSH', False, 'use ssh to clone repository'),
 ]
@@ -57,7 +57,7 @@ def print_config(bglb):
     print(" fc compiler : " + bglb.fc)
     print(" mpi-c compiler : " + bglb.mpicc)
     print(" mpi-c++ compiler : " + bglb.mpicxx)
-    print(" mpi-fort compiler : " + bglb.mpifort)
+    print(" mpi-fort compiler : " + bglb.mpifc)
 
     print(" verbose : " + ("Yes" if bglb.verbose else "No"))
     print(" SWIG : " + bglb.swig)

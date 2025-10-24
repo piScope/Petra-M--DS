@@ -1,4 +1,6 @@
 import os
+import multiprocessing
+
 from build_utils import *
 
 
@@ -19,6 +21,9 @@ def cmake_mumps(bglb):
         if bglb.verbose:
             cmake_opts['DCMAKE_VERBOSE_MAKEFILE'] = 'Yes'
 
+        cmake_opts['DCMAKE_fortran_COMPILER'] = bglb.fc            
+        cmake_opts['DMPI_fortran_COMPILER'] = bglb.mpifc
+        
         if bglb.mumps_scotch:
             cmake_opts['DMUMPS_scotch'] = 'Yes'
         if bglb.mumps_ptscotch:
@@ -64,8 +69,11 @@ def build_mumps(bglb):
     #
     path = os.path.join(bglb.extdir, 'mumps')
     root = chdir(path)
+
+    num_jobs = max(multiprocessing.cpu_count() - 1, 1)
+    num_jobs = min(num_jobs, 7)               
     
-    success, stdout, stderr = cmake('--build', 'cmbuild')
+    success, stdout, stderr = cmake('--build', 'cmbuild', '-j', str(num_jobs))
 
     if not success:
         assert False, stderr
