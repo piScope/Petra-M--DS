@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "_build_system"))
 
 from build_globals import bglb
 from build_config import *
+from build_utils import *
 from build_mumps import *
 
 from setuptools import setup, find_packages
@@ -76,9 +77,7 @@ class BuildPy(_build_py):
         print_config(bglb)
 
         if bglb.build_mumps:
-            clone_mumps()
-            cmake_mumps(bglb)
-            build_mumps(bglb)
+            clone_build_mumps(bglb)
 
         bglb.build_py_done = True
 

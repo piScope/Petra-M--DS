@@ -3,6 +3,7 @@ import multiprocessing
 
 from build_utils import *
 
+__all__ = ("clone_build_mumps",)
 
 def clone_mumps():
     gitclone('mumps', use_sha=True)
@@ -45,7 +46,7 @@ def cmake_mumps(bglb):
         if bglb.cmumps:
             cmake_opts['DBUILD_COMPLEX'] = 'Yes'
         if bglb.zmumps:
-            cmake_opts['DBUILD_COMPELX16'] = 'Yes'
+            cmake_opts['DBUILD_COMPLEX16'] = 'Yes'
 
         if bglb.mumps_int64:
             cmake_opts['DMUMPS_intsize64'] = 'Yes'
@@ -72,9 +73,16 @@ def build_mumps(bglb):
 
     num_jobs = max(multiprocessing.cpu_count() - 1, 1)
     num_jobs = min(num_jobs, 7)               
-    
+
     success, stdout, stderr = cmake('--build', 'cmbuild', '-j', str(num_jobs))
 
     if not success:
         assert False, stderr
     chdir(root)
+
+def clone_build_mumps(bglb):
+    clone_mumps()
+    cmake_mumps(bglb)
+    build_mumps(bglb)
+    cmake_mumps(bglb)
+    build_mumps(bglb)

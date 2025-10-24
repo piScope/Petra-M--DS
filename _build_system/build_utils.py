@@ -54,19 +54,21 @@ def make_call(command, target='', force_verbose=False, env=None):
     try:
         p = subprocess.run(command, **kwargs)
 
-    except subprocess.CalledProcessErro:
+    except subprocess.CalledProcessError:
         if target == '':
             target = " ".join(command)
-        print("Failed when calling command: " + target)
+
         print("Subprocess stdout:", p.stdout.strip())
         print("Subprocess stderr:", p.stderr.strip())
-
-        return False, p.stdout.strip(), p.stdout.strip()
+        print("Failed when calling command: " + target)
+        
+        return False, p.stdout.strip(), p.stderr.strip()
 
     if myverbose:
         print(p.stdout.strip())
+        print(p.stderr.strip())        
 
-    return True, '', ''
+    return True, p.stdout.strip(), p.stderr.strip()
 
 
 def chdir(path):

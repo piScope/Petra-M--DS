@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.12.0)
 #	   -DMUMPS_INCLUDE_DIR=/Users/shiraiwa/src/MUMPS_5.1.1/include/
 #	   -DMUMPS_LINK_DIR=/Users/shiraiwa/src/MUMPS_5.1.1/lib/
 
-project(MUMPS)
+project(MUMPS_SOLVE)
 
 option(USE_METIS "Link with METIS/ParMETIS library" ON)
 option(USE_SCOTCH "Link with Scotch/PT-Scotch library" ON)
