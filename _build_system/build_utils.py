@@ -18,7 +18,7 @@ from shutil import which as find_command
 
 __all__ = ("abspath", "make_call", "chdir", "remove_files",
            "make", "make_install", "download", "gitclone",
-           "cmake",)
+           "cmake", "find_mpi_include")
 
 from build_globals import bglb, REPOS
 
@@ -61,12 +61,12 @@ def make_call(command, target='', force_verbose=False, env=None):
         print("Subprocess stdout:", p.stdout.strip())
         print("Subprocess stderr:", p.stderr.strip())
         print("Failed when calling command: " + target)
-        
+
         return False, p.stdout.strip(), p.stderr.strip()
 
     if myverbose:
         print(p.stdout.strip())
-        print(p.stderr.strip())        
+        print(p.stderr.strip())
 
     return True, p.stdout.strip(), p.stderr.strip()
 
@@ -184,3 +184,51 @@ def cmake(*args, **kwargs):
 
     flag, stdout, stdrrr = make_call(command)
     return flag, stdout, stdrrr
+
+def _find_mpi_include_from_cmake(bglb):
+    path = os.path.join(bglb.rootdir, 'external', 'mumps', 'cmbuild', 'CMakeCache.txt')
+    if not os.path.exists(path):
+        return False, "can not find CMakeCache.txt in:" + path
+
+    fid = open(path)
+    for l in fid.readlines():
+       if l.startswith("MPI_C_COMPILER_INCLUDE_DIR"):
+           value = l
+           break
+    else:
+        return False, "Cache file does not contain MPI_C_COMPILER_INCLUDE_DIR"
+
+    dirs = value.split("=")[-1].split(";")
+    for x in dirs:
+        x = x.strip()
+        if "mpi.h" in os.listdir(x):
+            return True, x
+
+
+    return False, "can not find mpi.h"
+
+def find_mpi_include(bglb):
+    if bglb.cmakecache_4_mpi is not None:
+        print("looking for mpi.h using CMakeCache.txt")
+        flag, path_or_msg = _find_mpi_include_from_cmake(bglb)
+        if not flag:
+            print("   -- failed: "  + path_or_msg)
+            path = None
+        else:
+            path = path_or_msg
+    else:
+        path = None
+
+    mpi_inc_dir = os.getenv("MPI_INC_DIR")
+
+    if mpi_inc_dir is not None and path is None:
+        return mpi_inc_dir
+    if mpi_inc_dir is None and path is not None:
+        return path
+    if mpi_inc_dir is None and path is None:
+        assert False, "Can not find mpi.h"
+    if mpi_inc_dir is not None and path is not None:
+        if mpi_inc_dir != path:
+            assert False, "Twi different mpi.h loc. is found"
+        else:
+            return path

@@ -23,7 +23,10 @@ class BuildGlobal():
         self.verbose = True
         self.keep_temp = False
         self.is_configured = False
-        self.build_py_done = False
+        self.running_install = False
+        self.cmakecache_4_mpi = None # CMakcCache hit to find mpi.h
+        self.prefix = ""
+        self.ext_prefix = ""
 
         # directory
         rootdir = os.path.join(os.path.abspath(
@@ -58,8 +61,9 @@ class BuildGlobal():
         from build_config import initialize_cmd_opts
         initialize_cmd_opts(self)
 
-        #
+        # controlling mumps build
         self.build_mumps = True
+        self.do_mumps_steps = [True, True, True] # mumps, mumps_solve/swig, extension
 
 
 rels = namedtuple('Release', ['version', 'defbranch', 'hash', 'tarball'])

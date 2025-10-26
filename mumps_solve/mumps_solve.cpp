@@ -239,7 +239,7 @@ int libmumps_solve_example(MPI_Comm comm)
   double a[2];
   double rhs[2];
 
-  MUMPS_INT myid, ierr;
+  int myid, ierr;
   
   ierr = MPI_Comm_rank(comm, &myid);
 

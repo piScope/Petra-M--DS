@@ -6,8 +6,6 @@ from collections import namedtuple
 
 __all__ = ["print_config",
            "initialize_cmd_opts",
-           "process_cmd_opts",
-           "process_setup_opts",
            "configure_build",
            "clean_dist_info",
            "clean_wrapper",
@@ -28,11 +26,12 @@ cmd_opts = [
     ('MUMPS-METIS=', 'YES', 'build mumps with METIS'),
     ('MUMPS-ParMETIS=', 'YES', 'build mumps with ParMETIS'),
     ('MUMPS-OpenMP=', 'YES', 'use OpenMP in MUMPS'),
-    ('MUMPS-int64=', 'No', 'use OpenMP in MUMPS'),    
+    ('MUMPS-int64=', 'No', 'use OpenMP in MUMPS'),
     ('SMUMPS=', 'YES', 'build single version'),
     ('DMUMPS=', 'YES', 'build double version'),
     ('CMUMPS=', 'YES', 'build complex version'),
     ('ZMUMPS=', 'YES', 'build double complex version'),
+    ('no-mumps', False, 'Do not build mumps'),
     ('ext-only', False, 'Build external libaries (MUMPS etc) only'),
     ('swig-only', False, 'Run swig wrapper only (ext-only is required before this option)'),
     ('skip-ext', False, 'Skip building external libaries (MUMPS etc)'),
@@ -92,7 +91,7 @@ def initialize_cmd_opts(bglb):
         setattr(bglb, attr.lower(), value)
 
 
-def process_cmd_opts(bglb, cfs):
+def _process_cmd_opts(bglb, cfs):
     '''
     called when install workflow is used
     '''
@@ -118,7 +117,7 @@ def process_cmd_opts(bglb, cfs):
                 setattr(bglb, attr, False)
 
 
-def process_setup_opts(bglb, args):
+def _process_setup_opts(bglb, args):
     for item in args:
         if item.startswith('--'):
             item = item[2:]
@@ -135,6 +134,38 @@ def process_setup_opts(bglb, args):
 
         setattr(bglb, attr, value)
 
+'''
+def _external_install_prefix(prefix, verbose=True):
+    import site
+    if hasattr(site, "getusersitepackages"):
+        usersite = site.getusersitepackages()
+    else:
+        usersite = site.USER_SITE
+
+    if verbose:
+        print("running external_install_prefix with the following parameters")
+        print("   sys.argv :", sys.argv)
+        print("   sys.prefix :", sys.prefix)
+        print("   usersite :", usersite)
+        print("   prefix :", prefix)
+
+    if '--user' in sys.argv:
+        path = usersite
+        if not os.path.exists(path):
+            os.makedirs(path)
+        path = os.path.join(path, 'petram', 'external')
+        return path
+
+    else:
+        # when prefix is given...let's borrow pip._internal to find the location ;D
+        import pip._internal.locations
+        path = pip._internal.locations.get_scheme(
+            "petram", prefix=prefix).platlib
+        if not os.path.exists(path):
+            os.makedirs(path)
+        path = os.path.join(path, 'petram', 'external')
+        return path
+'''
 
 def configure_build(bglb):
     '''
@@ -142,15 +173,25 @@ def configure_build(bglb):
 
     '''
     if sys.argv[0] == 'setup.py' and sys.argv[1] == 'install':
-        process_setup_opts(bglb, sys.argv[2:])
+        _process_setup_opts(bglb, sys.argv[2:])
     else:
         if bglb.verbose:
             print("!!!!!!!!  command-line input (pip): ", bglb.cfs)
-        process_cmd_opts(bglb, bglb.cfs)
+        _process_cmd_opts(bglb, bglb.cfs)
 
-    if bglb.ext_only:
-        bglb.keep_temp = True
-    if bglb.swig_only:
-        bglb.keep_temp = True
-    if bglb.skip_ext:
-        bglb.keep_temp = True
+    if bglb.no_mumps:
+        bglb.build_mumps = False
+        bglb.do_mumps_steps = [False, False, False] # mumps, mumps_solve/swig, extension
+    else:
+        if bglb.ext_only:
+            bglb.keep_temp = True
+            bglb.do_mumps_steps = [True, False, False]
+        if bglb.swig_only:
+            bglb.keep_temp = True
+            bglb.do_mumps_steps = [False, True, False]
+        if bglb.skip_ext:
+            bglb.keep_temp = True
+            bglb.do_mumps_steps = [False, False, True]
+
+    path = os.path.join(bglb.rootdir, 'external', 'mumps', 'cmbuild', 'CMakeCache.txt')
+    bglb.cmakecache_4_mpi = path

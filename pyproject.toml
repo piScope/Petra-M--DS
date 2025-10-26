@@ -27,7 +27,7 @@ MPI = ["mpi4py"]
 "Download" = "https://github.com/piScope/PetraM_MUMPS"
 
 [tool.setuptools]
-packages = ["python.petram"]
+package-dir = {"" = "python"}
 
 [build-system]
 requires = [
@@ -36,6 +36,7 @@ requires = [
 	"numpy>=2.3.0",
 	"cmake>=4.0.0",
 	"swig>=4.3",
+	"mpi4py",
 ]
 build-backend = "backend"
 backend-path = ["_build_system"]

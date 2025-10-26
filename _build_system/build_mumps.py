@@ -1,15 +1,27 @@
 import os
 import multiprocessing
+import shutil
 
-from build_utils import *
+from build_utils import chdir, gitclone, cmake
 
 __all__ = ("clone_build_mumps",)
 
-def clone_mumps():
-    gitclone('mumps', use_sha=True)
+def _clone_mumps(bglb):
+    path = os.path.join(bglb.extdir)
+    root = chdir(path)
 
+    try:
+        gitclone('mumps', use_sha=True)
+        path2 = os.path.join(bglb.extdir, 'mumps', 'cmbuild')
+        if os.path.exists(path2):
+             shutil.rmtree(path2)
+    except BaseException:
+        chdir(root)
+        raise
 
-def cmake_mumps(bglb):
+    chdir(root)
+
+def _cmake_mumps(bglb):
     path = os.path.join(bglb.extdir, 'mumps')
     root = chdir(path)
 
@@ -22,9 +34,9 @@ def cmake_mumps(bglb):
         if bglb.verbose:
             cmake_opts['DCMAKE_VERBOSE_MAKEFILE'] = 'Yes'
 
-        cmake_opts['DCMAKE_fortran_COMPILER'] = bglb.fc            
+        cmake_opts['DCMAKE_fortran_COMPILER'] = bglb.fc
         cmake_opts['DMPI_fortran_COMPILER'] = bglb.mpifc
-        
+
         if bglb.mumps_scotch:
             cmake_opts['DMUMPS_scotch'] = 'Yes'
         if bglb.mumps_ptscotch:
@@ -64,7 +76,7 @@ def cmake_mumps(bglb):
     chdir(root)
 
 
-def build_mumps(bglb):
+def _build_mumps(bglb):
     #
     #  will call cmake --build cmbuild
     #
@@ -72,17 +84,31 @@ def build_mumps(bglb):
     root = chdir(path)
 
     num_jobs = max(multiprocessing.cpu_count() - 1, 1)
-    num_jobs = min(num_jobs, 7)               
+    num_jobs = min(num_jobs, 7)
 
     success, stdout, stderr = cmake('--build', 'cmbuild', '-j', str(num_jobs))
 
     if not success:
+        chdir(root)
         assert False, stderr
     chdir(root)
 
+def _install_mumps(bglb):
+    path = os.path.join(bglb.extdir, 'mumps')
+    root = chdir(path)
+
+    try:
+        cmake('--install', 'cmbuild')
+    except BaseException:
+        chdir(root)
+        raise
+
+    chdir(root)
+
 def clone_build_mumps(bglb):
-    clone_mumps()
-    cmake_mumps(bglb)
-    build_mumps(bglb)
-    cmake_mumps(bglb)
-    build_mumps(bglb)
+    _clone_mumps(bglb)
+    _cmake_mumps(bglb)
+    _build_mumps(bglb)
+    _cmake_mumps(bglb)
+    _build_mumps(bglb)
+    _install_mumps(bglb)

@@ -12,44 +12,14 @@ cmake_minimum_required(VERSION 3.12.0)
 
 project(MUMPS_SOLVE)
 
-option(USE_METIS "Link with METIS/ParMETIS library" ON)
-option(USE_SCOTCH "Link with Scotch/PT-Scotch library" ON)
-
-
-if(NOT METIS_LINK_DIR)
-  set(METIS_LINK_DIR ${CMAKE_INSTALL_PREFIX}/lib)
-endif()
-if(NOT PARMETIS_LINK_DIR)
-  set(PARMETIS_LINK_DIR ${CMAKE_INSTALL_PREFIX}/lib)
-endif()
-if(NOT SCOTCH_LINK_DIR)
-    set(SCOTCH_LINK_DIR ${CMAKE_INSTALL_PREFIX}/lib)
-endif()
-  
-#set(CMAKE_INSTALL_RPATH ${METIS_LINK_DIR}
-#                        ${PARMETIS_LINK_DIR}
-#                        ${SCOTCH_LINK_DIR})
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 enable_language(Fortran)
 
-find_package(ZLIB REQUIRED)
-find_package(MPI  REQUIRED)
+find_package(MPI REQUIRED)
 find_package(OpenMP)
+find_package(Threads)
 
-if (OPENMP_FOUND)
-    if(NOT DEFINED OpenMP_LINK_FLAG)
-        set(OpenMP_LINK_FLAG ${OpenMP_EXE_LINKER_FLAGS})
-    endif()
-else()
-    if(DEFINED OpenMP_Fortran)
-        set(OpenMP_LINK_FLAG  ${OpenMP_Fortran})
-    endif()
-    set(OpenMP_CXX_FLAGS "")
-endif()
 
-set(FPIC " -fPIC ")
-set(LINK_FLAGS ${FPIC})
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 if (APPLE)
     set(SHARED_SC_COMPILE_FLAGS " -fPIC ")
@@ -57,7 +27,7 @@ if (APPLE)
     set(SHARED_SC_LINK_FLAGS_2 "")
     set(SYMBOL_FLAG1  "-Wl,-exported_symbols_list")
     set(SYMBOL_FLAG2  ${CMAKE_CURRENT_SOURCE_DIR}/exported_symbols_list.txt)
-    set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR true)  # this writes full path using install_name_dir  
+    set(CMAKE_BUILD_WITH_INSTALL_NAME_DIR true)  # this writes full path using install_name_dir
 else()
     set(SHARED_SC_COMPILE_FLAGS " -fPIC")
     set(SHARED_SC_LINK_FLAGS_1 "-Wl,-whole-archive")
@@ -66,12 +36,24 @@ else()
     set(SYMBOL_FLAG2  "")
 endif()
 
+
+set(MUMPS_CMBUILD)
+get_filename_component(EXTERNAL_MUMPS_CMBUILD   "../external/mumps/cmbuild" ABSOLUTE)
+
+set(MUMPS_LINK_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/lib)
+set(METIS_LINK_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/lib)
+set(SCOTCH_LINK_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/lib)
+set(MUMPS_INCLUDE_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/include)
+
+load_cache(${EXTERNAL_MUMPS_CMBUILD} EXCLUDE CMAKE_INSTALL_PREFIX)
+
 set( MUMPS_COMMON_STATIC ${MUMPS_LINK_DIR}/libmumps_common.a )
 set( ZMUMPS_STATIC ${MUMPS_LINK_DIR}/libzmumps.a )
 set( SMUMPS_STATIC ${MUMPS_LINK_DIR}/libsmumps.a )
 set( DMUMPS_STATIC ${MUMPS_LINK_DIR}/libdmumps.a )
 set( CMUMPS_STATIC ${MUMPS_LINK_DIR}/libcmumps.a )
 set( PORD_STATIC ${MUMPS_LINK_DIR}/libpord.a )
+set( GKLIB_STATIC ${METIS_LINK_DIR}/libGKlib.a )
 set( METIS_STATIC ${METIS_LINK_DIR}/libmetis.a )
 set( PARMETIS_STATIC ${METIS_LINK_DIR}/libparmetis.a )
 set( SCOTCH_STATIC ${SCOTCH_LINK_DIR}/libscotch.a )
@@ -83,78 +65,64 @@ set( PTSCOTCHEE_STATIC ${SCOTCH_LINK_DIR}/libptscotcherrexit.a )
 set( ESMUMPS_STATIC ${SCOTCH_LINK_DIR}/libesmumps.a )
 set( PTESMUMPS_STATIC ${SCOTCH_LINK_DIR}/libptesmumps.a )
 
-#set( GKLIB_STATIC ${METIS_LINK_DIR}/libGKlib.a )
-
-set( MUMPS_SOLVE_H ${CMAKE_CURRENT_SOURCE_DIR}/mumps_solve.hpp )
-set( IFLAG " -I")
-set( CMP_FLAG ${OpenMP_CXX_FLAGS}${SHARED_SC_COMPILE_FLAGS}${IFLAG}${MUMPS_INCLUDE_DIR})
-message(STATUS ${CMP_FLAG})
-message(STATUS ${MUMPS_INCLUDE_DIR})
-
-# METIS_LIBRARIES
-list(APPEND METIS_LIBRARIES "")
-if (USE_METIS)
-  #list(APPEND METIS_LIBRARIES
-  #   -L${PARMETIS_LINK_DIR}
-  #   "parmetis"
-  #   -L${METIS_LINK_DIR}
-  #   "metis")
-  list(APPEND METIS_LIBRARIES
-       ${SHARED_SC_LINK_FLAGS_1}
-       ${PARMETIS_STATIC}
-       ${SHARED_SC_LINK_FLAGS_1}
-       ${METIS_STATIC}
-       #${SHARED_SC_LINK_FLAGS_1}
-       #${GKLIB_STATIC}
-       ${SHARED_SC_LINK_FLAGS_2})
-endif()
- 
-# SCOTCH_LIBRARIES
-list(APPEND SCOTCH_LIBRARIES "")
-if (USE_SCOTCH)
-  list(APPEND SCOTCH_LIBRARIES
-    ${ESMUMPS_STATIC}    
-    ${SCOTCH_STATIC}
-    ${SCOTCHE_STATIC}
-    ${SCOTCHEE_STATIC}
-    ${PTESMUMPS_STATIC}        
-    ${PTSCOTCH_STATIC}
-    ${PTSCOTCHE_STATIC}
-    ${PTSCOTCHEE_STATIC})
-endif()
-
-# make target
 add_library(mumps_solve SHARED mumps_solve.cpp)
-target_include_directories(mumps_solve PRIVATE ${MUMPS_INCLUDE_DIR})
-target_link_libraries(mumps_solve
-                            ${SHARED_SC_LINK_FLAGS_1}
+
+message(STATUS "MUMPS include director:"  ${MUMPS_INCLUDE_DIR})
+message(STATUS "Install Prefix:"  ${CMAKE_INSTALL_PREFIX})
+
+target_include_directories(mumps_solve PUBLIC ${MUMPS_INCLUDE_DIR})
+target_link_libraries(mumps_solve PRIVATE
+#                            ${SHARED_SC_LINK_FLAGS_1}
                             ${ZMUMPS_STATIC}
-                            ${SHARED_SC_LINK_FLAGS_1}			    
+#                            ${SHARED_SC_LINK_FLAGS_1}
                             ${CMUMPS_STATIC}
-                            ${SHARED_SC_LINK_FLAGS_1}			    
+#                            ${SHARED_SC_LINK_FLAGS_1}
                             ${DMUMPS_STATIC}
-                            ${SHARED_SC_LINK_FLAGS_1}
+#                            ${SHARED_SC_LINK_FLAGS_1}
      		            ${SMUMPS_STATIC}
-                            ${SHARED_SC_LINK_FLAGS_1}
+#                            ${SHARED_SC_LINK_FLAGS_1}
                             ${MUMPS_COMMON_STATIC}
-                            ${SHARED_SC_LINK_FLAGS_1}
+#                            ${SHARED_SC_LINK_FLAGS_1}
                             ${PORD_STATIC}
-                            ${SHARED_SC_LINK_FLAGS_2}
+#                            ${SHARED_SC_LINK_FLAGS_2}
                             ${SYMBOL_FLAG1}
-                            ${SYMBOL_FLAG2}
-			    ${METIS_LIBRARIES}
-			    ${SCOTCH_LIBRARIES}
-   		            ${SCALAPACK_FLAGS}
-   		            ${LAPACK_FLAGS}
-			    ${MPI_C_LIBRARIES}
-                            ${OpenMP_LINK_FLAG})
-			    
-set_target_properties(mumps_solve PROPERTIES 
-                      COMPILE_FLAGS ${CMP_FLAG}
-                      LINK_FLAGS ${LINK_FLAGS}
+                            ${SYMBOL_FLAG2})
+if(MUMPS_ptscotch)
+  target_link_libraries(mumps_solve PRIVATE ${PTESMUMPS_STATIC} ${PTSCOTCH_STATIC} ${PTSCOTCHE_STATIC})
+endif()
+if(MUMPS_scotch)
+   target_link_libraries(mumps_solve PRIVATE ${ESMUMPS_STATIC} ${SCOTCH_STATIC} ${SCOTCHE_STATIC})
+endif()
+
+target_link_libraries(mumps_solve PRIVATE
+  $<$<BOOL:${MUMPS_parmetis}>:${PARMETIS_STATIC}>
+  $<$<BOOL:${MUMPS_metis}>:${METIS_STATIC}>
+  $<$<BOOL:${MUMPS_metis}>:${GKLIB_STATIC}>
+  ${PORD_STATIC}
+  )
+target_link_libraries(mumps_solve PRIVATE
+  $<$<AND:$<BOOL:${MUMPS_scalapack}>,$<BOOL:${MUMPS_parallel}>>:${SCALAPACK_LIBRARY}>
+  )
+if (${LAPACK_LIBRARY})
+   target_link_libraries(mumps_solve PRIVATE ${LAPACK_LIBRARY})
+endif()
+if (${BLACS_LIBRARY})
+   target_link_libraries(mumps_solve PRIVATE ${BLACS_LIBRARY})
+endif()
+if (${BLAS_LIBRARY})
+   target_link_libraries(mumps_solve PRIVATE ${BLAS_LIBRARY})
+endif()
+
+target_link_libraries(mumps_solve PRIVATE
+  $<$<BOOL:${IMPI_LIB64}>:${IMPI_LIB64}>
+  ${CMAKE_THREAD_LIBS_INIT}
+  MPI::MPI_Fortran MPI::MPI_CXX MPI::MPI_C
+  $<$<BOOL:${MUMPS_openmp}>:OpenMP::OpenMP_Fortran>
+)
+
+set_target_properties(mumps_solve PROPERTIES
 		      LINKER_LANGUAGE Fortran
                       OUTPUT_NAME mumps_solve )
 install(TARGETS mumps_solve
         DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
         )
-
