@@ -15,7 +15,7 @@ from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
 from distutils.command.clean import clean as _clean
 
 # these lines are necesssary for python setup.py clean #
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "_build_system"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "_build_system"))  # nopep8
 
 from build_globals import bglb
 from build_config import (print_config,
@@ -41,6 +41,7 @@ all_extensions = [
 ]
 common_macros = [('TARGET_PY3', '1'),
                  ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')]
+
 
 class BdistWheel(_bdist_wheel):
     def initialize_options(self):
@@ -83,6 +84,7 @@ class Install(_install):
         _install.run(self)
         bglb.running_install = False
 
+
 class BuildPy(_build_py):
     '''
     Called when python setup.py build_py
@@ -103,6 +105,7 @@ class BuildPy(_build_py):
         _build_py.run(self)
         print("end of buildpy::run")
 
+
 class BuildExt(_build_ext):
     def run(self):
         print("Running BuildExt")
@@ -119,7 +122,8 @@ class BuildExt(_build_ext):
 
         for item in self.extensions:
             if bglb.do_mumps_steps[2] and item.name == 'petram.ext.mumps._mumps_solve':
-                mumpsinc = os.path.join(bglb.rootdir, "external", "mumps", "cmbuild",  "local", "include")
+                mumpsinc = os.path.join(
+                    bglb.rootdir, "external", "mumps", "cmbuild",  "local", "include")
                 mumpssolveinc = os.path.join(bglb.rootdir, "mumps_solve")
 
                 item.include_dirs.append(numpyinc)
@@ -138,11 +142,13 @@ class BuildExt(_build_ext):
 
         # this is common to all (future) extension libraries
         for item in self.extensions:
-            item.library_dirs.append(os.path.join(bglb.bdist_wheel_prefix, "petram", "external", "lib"))
+            item.library_dirs.append(os.path.join(
+                bglb.bdist_wheel_prefix, "petram", "external", "lib"))
             if sys.platform in ("linux", "linux2"):
                 item.runtime_library_dirs.append("$ORIGIN/../../external/lib")
             elif sys.platform == "darwin":
-                item.runtime_library_dirs.append("@loader_path/../../external/lib")
+                item.runtime_library_dirs.append(
+                    "@loader_path/../../external/lib")
 
             print(item)
 
@@ -157,12 +163,11 @@ class Clean(_clean):
     def initialize_options(self):
         _clean.initialize_options(self)
         self.ext = False
-        self.swig= False
+        self.swig = False
 
     def run(self):
         bglb.dry_run = self.dry_run
         bglb.verbose = bool(self.verbose)
-
 
         if self.ext or self.all:
             path = os.path.join(bglb.extdir, 'mumps')
@@ -181,7 +186,6 @@ if __name__ == '__main__':
                 'build_ext': BuildExt,
                 'clean': Clean,
                 'bdist_wheel': BdistWheel}
-
 
     setup(
         ext_modules=all_extensions,
