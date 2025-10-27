@@ -62,6 +62,8 @@ def _cmake_mumps(bglb):
 
         if bglb.mumps_int64:
             cmake_opts['DMUMPS_intsize64'] = 'Yes'
+        else:
+            cmake_opts['DMUMPS_intsize64'] = 'No'
         if bglb.mumps_openmp:
             cmake_opts['DMUMPS_openmp'] = 'Yes'
         else:

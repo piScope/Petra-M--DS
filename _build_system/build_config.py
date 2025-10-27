@@ -87,6 +87,13 @@ def initialize_cmd_opts(bglb):
 
         attr = '_'.join(param.split('-'))
         value = value if os.getenv(attr) is None else os.getenv(attr)
+        try:
+            if value.upper() in ("YES", "TRUE", "1"):
+                value = True
+            if value.upper() in ("NO", "FALSE", "0"):
+                value = False
+        except:
+            pass
 
         setattr(bglb, attr.lower(), value)
 
@@ -105,6 +112,13 @@ def _process_cmd_opts(bglb, cfs):
             if value != "":
                 if not hasattr(bglb, attr):
                     assert False, str(bglb) + " does not have " + attr
+                try:
+                    if value.upper() in ("YES", "TRUE", "1"):
+                        value = True
+                    if value.upper() in ("NO", "FALSE", "0"):
+                        value = False
+                except:
+                    pass
                 setattr(bglb, attr, value)
         else:
             value = cfs.pop(param, "No")
@@ -175,8 +189,8 @@ def configure_build(bglb):
     if sys.argv[0] == 'setup.py' and sys.argv[1] == 'install':
         _process_setup_opts(bglb, sys.argv[2:])
     else:
-        if bglb.verbose:
-            print("!!!!!!!!  command-line input (pip): ", bglb.cfs)
+        #if bglb.verbose:
+        #    print("!!!!!!!!  command-line input (pip): ", bglb.cfs)
         _process_cmd_opts(bglb, bglb.cfs)
 
     if bglb.no_mumps:
