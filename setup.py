@@ -1,125 +1,193 @@
-from __future__ import print_function
 """
 setup.py file for SWIG example
 """
-from setuptools import setup, find_packages
-
-# To use a consistent encoding
-from codecs import open
 import sys
 import os
-
-here = os.path.abspath(os.path.dirname(__file__))
-
-with open(os.path.join(here, 'README.md')) as f:
-    long_description = f.read()
-
-print('building mumps solver interface')
-
-## 
-setup_dir = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-mumps_solve_incdir = os.path.join(setup_dir, "mumps_solve")
-mumps_solve_dir = ''
-
-from distutils.core import *
-from distutils      import sysconfig
-
-
-modules= ["mumps_solve", ]
-
-module_path="petram.ext.mumps."
-sdir = "petram/ext/mumps/"
-sources = {name: [sdir + name + "_wrap.cxx"] for name in modules}
-
-proxy_names = {name: '_'+name for name in modules}
-
-#mumps_link_args =  [libporda, mumpscommonliba, dmumpsliba, smumpsliba, cmumpsliba,
-#                    zmumpsliba]
-
-
-#include_dirs = [mumps_solve_incdir, mpichincdir, numpyincdir,
-#                mpi4pyincdir, mumpsincdir, mumpssrcdir]
-import numpy
-numpyincdir = numpy.get_include()
-
+import shutil
 import mpi4py
-mpi4pyincdir = mpi4py.get_include()
+import numpy
 
-mumps_inc_dir = os.getenv("MUMPS_INC_DIR")
-mpi_inc_dir = os.getenv("MPI_INC_DIR")
+from setuptools import setup, Extension
+from setuptools.command.build_py import build_py as _build_py
+from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools.command.install import install as _install
+from setuptools.command.bdist_wheel import bdist_wheel as _bdist_wheel
+from distutils.command.clean import clean as _clean
 
-include_dirs = [mumps_solve_incdir, numpyincdir, mpi4pyincdir,
-                mumps_inc_dir, mpi_inc_dir]
-include_dirs = [x for x in include_dirs if x.strip() != '']
+# these lines are necesssary for python setup.py clean #
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "_build_system"))  # nopep8
 
-#lib_list = ["pord", "parmetis", "metis5", "scalapack",  "blas"]
-lib_list = []
-library_dirs = [os.getenv("MUMPS_SOLVE_DIR")]
-#libraries = ["smumps", "dmumps", "cmumps", "zmumps", "mumps_common"]
-libraries = ["mumps_solve"]
-for lib in lib_list:
-    if eval(lib) != "":
-        print(lib, eval(lib))
-        library_dirs.append(eval(lib+ 'lnkdir'))
-        libraries.append(eval(lib+'lib'))
-        
-mkl = os.getenv("MKL")
-ompflag = os.getenv("OMPFLAG")
-
-print("ompflag", ompflag)
-ext_modules = []
-for kk, name in enumerate(modules):
-   extra_link_args = [ompflag]
-
-   '''
-   if kk == 0:
-       extra_link_args = mumps_link_args + [sdir + name+'.a']
-   else:
-       extra_link_args = [sdir + name+'.a']
-
-   if whole_archive != '':
-       extra_link_args = ['-Wl', whole_archive] +  extra_link_args + [no_whole_archive]
-       extra_link_args =  [x for x in extra_link_args if len(x) != 0]   
-       extra_link_args =  [','.join(extra_text)]
-   '''
-   if mkl != '':
-       extra_link_args =  ['-shared-intel', mkl] + extra_link_args
-   #if nocompactunwind != '':        
-   #    extra_link_args.extend([nocompactunwind])
-   #extra_link_args =  ['-fopenmp']+[x for x in extra_link_args if len(x) != 0]
-   #extra_link_args =  [x for x in extra_link_args if len(x) != 0]   
+from build_globals import bglb
+from build_config import (print_config,
+                          initialize_cmd_opts,
+                          configure_build,
+                          clean_dist_info,
+                          clean_wrapper)
+from build_utils import (abspath,
+                         find_mpi_include)
+from build_mumps import clone_build_mumps
+from build_mumps_solve import cmake_mumps_solve, generate_mumps_solve_wrapper
 
 
-   ext_modules.append(Extension(module_path+proxy_names[name],
-                        sources=sources[name],
-                        extra_compile_args = ['-DSWIG_TYPE_TABLE=PyMFEM'],   
-                        extra_link_args = extra_link_args,
-                        include_dirs = include_dirs,
-                        library_dirs = library_dirs,
-                        libraries = libraries ))
+#
+#  We set this here. Setting this in pyproject.toml is experimental (2025. Oct)
+#
+all_extensions = [
+    Extension(
+        "petram.ext.mumps._mumps_solve",
+        sources=["python/petram/ext/mumps/mumps_solve_wrap.cxx",],
+        libraries=["mumps_solve"]
+    ),
+]
+common_macros = [('TARGET_PY3', '1'),
+                 ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')]
 
-setup (name = 'PetraM_MUMPS',
-       url='https://github.com/piScope/PetraM',       
-       version = '1.1.9',
-       description = 'PetraM MUMPS interface', 
-       long_description=long_description,       
-       author      = "S. Shiraiwa",
-       author_email='shiraiwa@psfc.mit.edu',
-       license='GNUv3',
-       
-       classifiers=[
-        #   3 - Alpha
-        #   4 - Beta
-        #   5 - Production/Stable
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'Topic :: Scientific/Engineering :: Physics',
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
-        'Programming Language :: Python :: 2.7',
-       ],
 
-       keywords='MFEM physics',
-       packages=find_packages(),
-       ext_modules = ext_modules,
-#       py_modules = modules,
-)
+class BdistWheel(_bdist_wheel):
+    def initialize_options(self):
+        _bdist_wheel.initialize_options(self)
+        initialize_cmd_opts(bglb)
+
+    def finalize_options(self):
+        def _has_ext_modules():
+            return True
+        self.distribution.has_ext_modules = _has_ext_modules
+        _bdist_wheel.finalize_options(self)
+
+    def run(self):
+        if not bglb.is_configured:
+            if bglb.verbose:
+                print('!!!!! Running config (bdist wheel)')
+
+            bglb.bdist_wheel_prefix = abspath(self.bdist_dir)
+
+            configure_build(bglb)
+            clean_dist_info(bglb.bdist_wheel_prefix)
+
+            self.verbose = bglb.verbose
+
+            if bglb.keep_temp:
+                self.keep_temp = True
+
+        bglb.is_configured = True
+
+        print_config(bglb)
+        _bdist_wheel.run(self)
+
+        print("end of bdistwheel::run")
+
+
+class Install(_install):
+    def run(self):
+        print("Running Install")
+        bglb.running_install = True
+        _install.run(self)
+        bglb.running_install = False
+
+
+class BuildPy(_build_py):
+    '''
+    Called when python setup.py build_py
+    '''
+    user_options = _build_py.user_options
+
+    def initialize_options(self):
+        _build_py.initialize_options(self)
+
+    def finalize_options(self):
+        _build_py.finalize_options(self)
+
+    def run(self):
+        print("Running BuildPy")
+        if bglb.do_mumps_steps[0]:
+            clone_build_mumps(bglb)
+
+        _build_py.run(self)
+        print("end of buildpy::run")
+
+
+class BuildExt(_build_ext):
+    def run(self):
+        print("Running BuildExt")
+
+        if bglb.do_mumps_steps[1]:
+            cmake_mumps_solve(bglb)
+            generate_mumps_solve_wrapper(bglb)
+
+        selected_ext = []
+        mpi4pyinc = mpi4py.get_include()
+        numpyinc = numpy.get_include()
+
+        mpiinc = find_mpi_include(bglb)
+
+        for item in self.extensions:
+            if bglb.do_mumps_steps[2] and item.name == 'petram.ext.mumps._mumps_solve':
+                mumpsinc = os.path.join(
+                    bglb.rootdir, "external", "mumps", "cmbuild",  "local", "include")
+                mumpssolveinc = os.path.join(bglb.rootdir, "mumps_solve")
+
+                item.include_dirs.append(numpyinc)
+                item.include_dirs.append(mpiinc)
+                item.include_dirs.append(mumpssolveinc)
+                item.include_dirs.append(mumpsinc)
+                item.include_dirs.append(mpi4pyinc)
+                item.define_macros.extend(common_macros)
+
+                selected_ext.append(item)
+
+        if len(selected_ext) == 0:
+            return
+
+        self.extensions = selected_ext
+
+        # this is common to all (future) extension libraries
+        for item in self.extensions:
+            item.library_dirs.append(os.path.join(
+                bglb.bdist_wheel_prefix, "petram", "external", "lib"))
+            if sys.platform in ("linux", "linux2"):
+                item.runtime_library_dirs.append("$ORIGIN/../../external/lib")
+            elif sys.platform == "darwin":
+                item.runtime_library_dirs.append(
+                    "@loader_path/../../external/lib")
+
+            print(item)
+
+        _build_ext.run(self)
+
+
+class Clean(_clean):
+    user_options = _clean.user_options + [
+        ('ext', None, 'clean exteranal dependencies)'),
+    ]
+
+    def initialize_options(self):
+        _clean.initialize_options(self)
+        self.ext = False
+        self.swig = False
+
+    def run(self):
+        bglb.dry_run = self.dry_run
+        bglb.verbose = bool(self.verbose)
+
+        if self.ext or self.all:
+            path = os.path.join(bglb.extdir, 'mumps')
+            if os.path.exists(path):
+                shutil.rmtree(path)
+
+        if self.swig or self.all:
+            clean_wrapper()
+
+        _clean.run(self)
+
+
+if __name__ == '__main__':
+    cmdclass = {'install': Install,
+                'build_py': BuildPy,
+                'build_ext': BuildExt,
+                'clean': Clean,
+                'bdist_wheel': BdistWheel}
+
+    setup(
+        ext_modules=all_extensions,
+        cmdclass=cmdclass,
+    )
