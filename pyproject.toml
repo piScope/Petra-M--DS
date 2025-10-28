@@ -1,7 +1,7 @@
 [project]
-name = "PetraM_MUMPS"
+name = "petram_ds"
 license = "BSD-3-Clause"
-description = "Direct solver support module for PetraM"
+description = "Direct solver module for PetraM"
 version = "1.2.0"
 readme = "README.md"
 authors = [ { name = "S. Shiraiwa" } ]
@@ -17,7 +17,7 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "numpy>=2.3.0",
+    "petram >=2.5.0"
 ]
 
 [project.optional-dependencies]

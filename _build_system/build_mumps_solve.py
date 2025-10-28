@@ -27,7 +27,6 @@ def cmake_mumps_solve(bglb):
     chdir(pwd)
 
 
-
 def generate_mumps_solve_wrapper(bglb):
 
     if bglb.dry_run or bglb.verbose:

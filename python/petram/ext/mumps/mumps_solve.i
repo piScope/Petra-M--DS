@@ -11,7 +11,7 @@
 %}
 // initialization required to return numpy array from SWIG
 %init %{
-import_array();
+import_array1(-1);
 %}
 %include mpi4py/mpi4py.i
 %mpi4py_typemap(Comm, MPI_Comm)

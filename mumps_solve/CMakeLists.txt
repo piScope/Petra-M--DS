@@ -21,6 +21,7 @@ find_package(Threads)
 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+
 if (APPLE)
     set(SHARED_SC_COMPILE_FLAGS " -fPIC ")
     set(SHARED_SC_LINK_FLAGS_1 "-Wl,-force_load")
@@ -36,14 +37,36 @@ else()
     set(SYMBOL_FLAG2  "")
 endif()
 
-
-set(MUMPS_CMBUILD)
 get_filename_component(EXTERNAL_MUMPS_CMBUILD   "../external/mumps/cmbuild" ABSOLUTE)
 
-set(MUMPS_LINK_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/lib)
-set(METIS_LINK_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/lib)
-set(SCOTCH_LINK_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/lib)
-set(MUMPS_INCLUDE_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/include)
+if (NOT DEFINED MUMPS_LINK_DIR)
+  if(EXISTS ${EXTERNAL_MUMPS_CMBUILD}/local/lib/libmumps_common.a)
+    set(MUMPS_LINK_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/lib)
+  endif()
+  if(EXISTS ${EXTERNAL_MUMPS_CMBUILD}/local/lib64/libmumps_common.a)
+    set(MUMPS_LINK_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/lib64)
+  endif()
+  if (NOT DEFINED MUMPS_LINK_DIR)
+    message(FATAL_ERROR "Error: MUMPS_LINK_DIR can not be determined")
+  endif()
+endif()
+if (NOT DEFINED MUMPS_INCLUDE_DIR)
+    set(MUMPS_INCLUDE_DIR ${EXTERNAL_MUMPS_CMBUILD}/local/include)
+endif()
+
+if (NOT DEFINED SCOTCH_LINK_DIR)
+  set(SCOTCH_LINK_DIR ${MUMPS_LINK_DIR})
+endif()
+if (NOT DEFINED METIS_LINK_DIR)
+  set(METIS_LINK_DIR ${MUMPS_LINK_DIR})
+endif()
+if (NOT DEFINED SCOTCH_INCLUDE_DIR)
+    set(SCOTCH_INCLUDE_DIR ${MUMPS_INCLUDE_DIR})
+endif()
+if (NOT DEFINED METIS_INCLUDE_DIR)
+    set(METIS_INCLUDE_DIR ${MUMPS_INCLUDE_DIR})
+endif()
+
 
 load_cache(${EXTERNAL_MUMPS_CMBUILD} EXCLUDE CMAKE_INSTALL_PREFIX)
 
@@ -58,10 +81,8 @@ set( METIS_STATIC ${METIS_LINK_DIR}/libmetis.a )
 set( PARMETIS_STATIC ${METIS_LINK_DIR}/libparmetis.a )
 set( SCOTCH_STATIC ${SCOTCH_LINK_DIR}/libscotch.a )
 set( SCOTCHE_STATIC ${SCOTCH_LINK_DIR}/libscotcherr.a )
-set( SCOTCHEE_STATIC ${SCOTCH_LINK_DIR}/libscotcherrexit.a )
 set( PTSCOTCH_STATIC ${SCOTCH_LINK_DIR}/libptscotch.a )
 set( PTSCOTCHE_STATIC ${SCOTCH_LINK_DIR}/libptscotcherr.a )
-set( PTSCOTCHEE_STATIC ${SCOTCH_LINK_DIR}/libptscotcherrexit.a )
 set( ESMUMPS_STATIC ${SCOTCH_LINK_DIR}/libesmumps.a )
 set( PTESMUMPS_STATIC ${SCOTCH_LINK_DIR}/libptesmumps.a )
 
@@ -70,7 +91,7 @@ add_library(mumps_solve SHARED mumps_solve.cpp)
 message(STATUS "MUMPS include director:"  ${MUMPS_INCLUDE_DIR})
 message(STATUS "Install Prefix:"  ${CMAKE_INSTALL_PREFIX})
 
-target_include_directories(mumps_solve PUBLIC ${MUMPS_INCLUDE_DIR})
+target_include_directories(mumps_solve PUBLIC ${MUMPS_INCLUDE_DIR} ${METIS_INCLUDE_DIR} ${SCOTCH_INCLUDE_DIR})
 target_link_libraries(mumps_solve PRIVATE
 #                            ${SHARED_SC_LINK_FLAGS_1}
                             ${ZMUMPS_STATIC}
