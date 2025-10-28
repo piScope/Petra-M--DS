@@ -11,8 +11,11 @@ This module
 
 ### ToDo
 
-  - support using METIS/STRUMPACK provided externally
-  - inclucde STRUMPACK (thorugh https://github.com/sshiraiwa/PySTRUMPACK
+  - support using METIS/SCOTCH provided externally
+  - inclucde STRUMPACK (thorugh https://github.com/sshiraiwa/PySTRUMPACK)
+  - add test
+  - possibly support using METIS/SCOTCH provided externally
+    
 
 
 
