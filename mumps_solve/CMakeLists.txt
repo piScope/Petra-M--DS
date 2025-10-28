@@ -66,8 +66,7 @@ endif()
 if (NOT DEFINED METIS_INCLUDE_DIR)
     set(METIS_INCLUDE_DIR ${MUMPS_INCLUDE_DIR})
 endif()
-
-
+  
 load_cache(${EXTERNAL_MUMPS_CMBUILD} EXCLUDE CMAKE_INSTALL_PREFIX)
 
 set( MUMPS_COMMON_STATIC ${MUMPS_LINK_DIR}/libmumps_common.a )
@@ -76,7 +75,7 @@ set( SMUMPS_STATIC ${MUMPS_LINK_DIR}/libsmumps.a )
 set( DMUMPS_STATIC ${MUMPS_LINK_DIR}/libdmumps.a )
 set( CMUMPS_STATIC ${MUMPS_LINK_DIR}/libcmumps.a )
 set( PORD_STATIC ${MUMPS_LINK_DIR}/libpord.a )
-set( GKLIB_STATIC ${METIS_LINK_DIR}/libGKlib.a )
+
 set( METIS_STATIC ${METIS_LINK_DIR}/libmetis.a )
 set( PARMETIS_STATIC ${METIS_LINK_DIR}/libparmetis.a )
 set( SCOTCH_STATIC ${SCOTCH_LINK_DIR}/libscotch.a )
@@ -112,15 +111,24 @@ if(MUMPS_ptscotch)
   target_link_libraries(mumps_solve PRIVATE ${PTESMUMPS_STATIC} ${PTSCOTCH_STATIC} ${PTSCOTCHE_STATIC})
 endif()
 if(MUMPS_scotch)
-   target_link_libraries(mumps_solve PRIVATE ${ESMUMPS_STATIC} ${SCOTCH_STATIC} ${SCOTCHE_STATIC})
+  target_link_libraries(mumps_solve PRIVATE ${ESMUMPS_STATIC} ${SCOTCH_STATIC} ${SCOTCHE_STATIC})
 endif()
 
 target_link_libraries(mumps_solve PRIVATE
   $<$<BOOL:${MUMPS_parmetis}>:${PARMETIS_STATIC}>
   $<$<BOOL:${MUMPS_metis}>:${METIS_STATIC}>
-  $<$<BOOL:${MUMPS_metis}>:${GKLIB_STATIC}>
-  ${PORD_STATIC}
   )
+
+if(EXISTS ${METIS_LINK_DIR}/libGKlib.a )
+  set( GKLIB_STATIC ${METIS_LINK_DIR}/libGKlib.a )  
+  target_link_libraries(mumps_solve PRIVATE
+    $<$<BOOL:${MUMPS_metis}>:${GKLIB_STATIC}>
+    )
+  endif()
+
+target_link_libraries(mumps_solve PRIVATE
+  ${PORD_STATIC}
+)
 target_link_libraries(mumps_solve PRIVATE
   $<$<AND:$<BOOL:${MUMPS_scalapack}>,$<BOOL:${MUMPS_parallel}>>:${SCALAPACK_LIBRARY}>
   )
